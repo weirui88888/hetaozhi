@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+/* Custom color variables for Walnut Collection */
+:root {
+  --background: #f8f7f4; /* paper color */
+  --foreground: #2c2825; /* ink color */
+  --ink-light: #5a5650;
+  --walnut: #8b7355;
+  --seal-red: #c84b31;
+  --stone-50: #fafaf9;
+  --stone-100: #f5f5f4;
+  --stone-200: #e7e5e4;
+  --stone-300: #d6d3d1;
+  --stone-400: #a8a29e;
+  --stone-500: #78716c;
+  --stone-800: #292524;
+  --stone-900: #1c1917;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-paper: #f8f7f4;
+  --color-ink: #2c2825;
+  --color-ink-light: #5a5650;
+  --color-walnut: #8b7355;
+  --color-seal-red: #c84b31;
+  --font-sans: var(--font-geist-sans);
+  --font-serif: "Noto Serif SC", "Songti SC", serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Noto Serif SC", "Songti SC", serif;
+}
+
+/* Selection style */
+::selection {
+  background: #e7e5e4;
+}
+
+/* Utility classes */
+.writing-vertical-rl {
+  writing-mode: vertical-rl;
+}
+
+/* Hide scrollbar but keep functionality */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Animation fade-in */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+/* Line clamp utility */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
