@@ -23,6 +23,7 @@ import { CATEGORIES } from "@/constants";
 import { Walnut } from "@/types";
 import { Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 export default function Home() {
   // --- 视图状态 ---
@@ -31,6 +32,36 @@ export default function Home() {
   >("gallery");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedWalnut, setSelectedWalnut] = useState<Walnut | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // --- 管理员连击逻辑 ---
+  const [clickCount, setClickCount] = useState(0);
+  const [lastClickTime, setLastClickTime] = useState(0);
+
+  // 初始化管理员状态
+  useEffect(() => {
+    const savedAdmin = localStorage.getItem("walnut_admin") === "true";
+    if (savedAdmin) setIsAdmin(true);
+  }, []);
+
+  const handleAdminToggle = () => {
+    const now = Date.now();
+    if (now - lastClickTime < 3000) {
+      const newCount = clickCount + 1;
+      if (newCount >= 5) {
+        const nextAdminState = !isAdmin;
+        setIsAdmin(nextAdminState);
+        localStorage.setItem("walnut_admin", String(nextAdminState));
+        toast.success(nextAdminState ? "进入管理员模式" : "退出管理员模式");
+        setClickCount(0);
+      } else {
+        setClickCount(newCount);
+      }
+    } else {
+      setClickCount(1);
+    }
+    setLastClickTime(now);
+  };
 
   // --- 数据状态 ---
   const [walnuts, setWalnuts] = useState<Walnut[]>([]);
@@ -96,15 +127,31 @@ export default function Home() {
   };
 
   /**
+   * 开启编辑视图
+   */
+  const handleEditWalnut = () => {
+    // 直接切换到编辑视图，弹窗会因为 currentView 条件自动隐藏
+    setCurrentView("upload");
+  };
+
+  /**
    * 保存成功后的回调
-   * - 将新数据添加到列表顶部
+   * - 将新数据添加到列表顶部或更新现有数据
    * - 返回首页
    */
   const handleSaveWalnut = (newWalnut: Walnut) => {
-    // 将新核桃添加到列表顶部
-    setWalnuts((prev) => [newWalnut, ...prev]);
-    alert("发布成功！");
+    setWalnuts((prev) => {
+      const index = prev.findIndex((w) => w.id === newWalnut.id);
+      if (index > -1) {
+        const next = [...prev];
+        next[index] = newWalnut;
+        return next;
+      }
+      return [newWalnut, ...prev];
+    });
+    toast.success("保存成功！");
     setCurrentView("gallery");
+    setSelectedWalnut(null);
   };
 
   // =============================================================================
@@ -118,6 +165,7 @@ export default function Home() {
         onNavigateAbout={handleNavigateAbout}
         onNavigateUpload={handleNavigateUpload}
         currentView={currentView}
+        isAdmin={isAdmin}
       />
 
       <main className="pb-24">
@@ -168,6 +216,7 @@ export default function Home() {
                       key={walnut.id}
                       data={walnut}
                       onClick={setSelectedWalnut}
+                      isAdmin={isAdmin}
                     />
                   ))}
                 </div>
@@ -175,7 +224,10 @@ export default function Home() {
 
               {/* 页脚装饰 */}
               <div className="mt-24 flex justify-center opacity-30">
-                <div className="w-16 h-16 border border-stone-800 rounded-sm flex items-center justify-center">
+                <div
+                  className="w-16 h-16 border border-stone-800 rounded-sm flex items-center justify-center cursor-pointer select-none active:scale-95 transition-transform"
+                  onClick={handleAdminToggle}
+                >
                   <span className="writing-vertical-rl text-xs font-bold tracking-widest">
                     核桃雅集
                   </span>
@@ -188,15 +240,21 @@ export default function Home() {
         {currentView === "about" && <AboutPage />}
 
         {currentView === "upload" && (
-          <UploadPage onCancel={handleNavigateHome} onSave={handleSaveWalnut} />
+          <UploadPage
+            onCancel={handleNavigateHome}
+            onSave={handleSaveWalnut}
+            initialData={selectedWalnut || undefined}
+          />
         )}
       </main>
 
-      {/* 详情弹窗 */}
-      {selectedWalnut && (
+      {/* 详情弹窗 - 仅在 gallery 视图下显示 */}
+      {selectedWalnut && currentView === "gallery" && (
         <WalnutDetailModal
           walnut={selectedWalnut}
+          isAdmin={isAdmin}
           onClose={() => setSelectedWalnut(null)}
+          onEdit={handleEditWalnut}
         />
       )}
     </div>

@@ -8,6 +8,7 @@ interface HeaderProps {
   onNavigateAbout: () => void;
   onNavigateUpload: () => void; // New prop
   currentView: "gallery" | "about" | "upload"; // Added 'upload'
+  isAdmin?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -15,6 +16,7 @@ const Header: React.FC<HeaderProps> = ({
   onNavigateAbout,
   onNavigateUpload,
   currentView,
+  isAdmin,
 }) => {
   return (
     <header className="pt-12 pb-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-6">
@@ -23,7 +25,11 @@ const Header: React.FC<HeaderProps> = ({
         onClick={onNavigateHome}
       >
         <h1 className="text-4xl sm:text-5xl font-serif font-bold text-ink tracking-widest mb-2 group-hover:opacity-80 transition-opacity">
-          核桃<span className="text-seal-red">.</span>志
+          核桃
+          <span className={isAdmin ? "text-green-500" : "text-seal-red"}>
+            .
+          </span>
+          志
         </h1>
         <p className="text-stone-500 text-sm tracking-[0.3em] uppercase group-hover:text-stone-700 transition-colors">
           The Walnut Collection

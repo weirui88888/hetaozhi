@@ -6,9 +6,10 @@ import React from "react";
 interface WalnutCardProps {
   data: Walnut;
   onClick: (walnut: Walnut) => void;
+  isAdmin?: boolean;
 }
 
-const WalnutCard: React.FC<WalnutCardProps> = ({ data, onClick }) => {
+const WalnutCard: React.FC<WalnutCardProps> = ({ data, onClick, isAdmin }) => {
   const hasMultipleImages = data.detailImages && data.detailImages.length > 0;
 
   return (

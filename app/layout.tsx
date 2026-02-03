@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Noto_Serif_SC } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const notoSerifSC = Noto_Serif_SC({
@@ -82,6 +83,7 @@ export default function RootLayout({
         className={`${notoSerifSC.variable} antialiased min-h-screen bg-paper font-serif text-ink`}
       >
         {children}
+        <Toaster richColors position="top-center" />
       </body>
     </html>
   );

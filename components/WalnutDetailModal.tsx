@@ -17,15 +17,20 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface WalnutDetailModalProps {
   walnut: Walnut;
   onClose: () => void;
+  isAdmin?: boolean;
+  onEdit?: () => void;
 }
 
 const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
   walnut,
   onClose,
+  isAdmin,
+  onEdit,
 }) => {
   // Combine cover image and detail images into a single list for the gallery
   const allImages = [walnut.coverImage, ...(walnut.detailImages || [])];
@@ -58,7 +63,7 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
     setIsDownloading(true);
     setTimeout(() => {
       setIsDownloading(false);
-      alert("海报已保存至相册 (模拟)");
+      toast.success("海报已保存至相册");
     }, 1500);
   };
 
@@ -95,13 +100,27 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
 
         {/* Modal Content */}
         <div className="relative w-full max-w-6xl h-full sm:h-[90vh] bg-[#fcfbf9] sm:rounded-md shadow-2xl overflow-hidden flex flex-col sm:flex-row animate-in fade-in zoom-in-95 duration-200">
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 z-50 p-2 bg-white/50 hover:bg-white rounded-full transition-colors backdrop-blur-md"
-          >
-            <X className="w-6 h-6 text-stone-800" />
-          </button>
+          {/* Close Button & Admin Controls */}
+          <div className="absolute top-4 right-4 z-50 flex gap-2">
+            {isAdmin && onEdit && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                className="p-2 bg-walnut/10 hover:bg-walnut/20 text-walnut rounded-full transition-colors backdrop-blur-md border border-walnut/20"
+                title="编辑详情"
+              >
+                <Palette className="w-6 h-6" />
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-2 bg-white/50 hover:bg-white rounded-full transition-colors backdrop-blur-md"
+            >
+              <X className="w-6 h-6 text-stone-800" />
+            </button>
+          </div>
 
           {/* Left Side: Image Gallery */}
           <div className="w-full sm:w-2/3 h-[50vh] sm:h-full bg-stone-100 relative group select-none">

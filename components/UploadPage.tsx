@@ -32,6 +32,7 @@ import {
   X,
 } from "lucide-react";
 import React, { useRef, useState } from "react";
+import { toast } from "sonner";
 
 // =============================================================================
 // 开发模式配置
@@ -72,19 +73,18 @@ const DEV_DEFAULTS = {
 interface UploadPageProps {
   onCancel: () => void;
   onSave: (walnut: Walnut) => void;
+  initialData?: Walnut;
 }
 
 /**
  * 本地图片文件状态
- * - file: 原始文件对象
- * - preview: base64 预览 URL（用于即时显示）
+ * - file: 原始文件对象（编辑模式下可能为空）
+ * - preview: 预览 URL
  * - width/height: 图片尺寸
- * - uploadedUrl: 上传成功后的 CDN URL
- * - isUploading: 是否正在上传
- * - uploadProgress: 上传进度 (0-100)
+ * - uploadedUrl: 已有的 CDN URL
  */
 interface LocalImageFile {
-  file: File;
+  file?: File;
   preview: string;
   width: number;
   height: number;
@@ -97,27 +97,77 @@ interface LocalImageFile {
 // 组件实现
 // =============================================================================
 
-const UploadPage: React.FC<UploadPageProps> = ({ onCancel, onSave }) => {
+const UploadPage: React.FC<UploadPageProps> = ({
+  onCancel,
+  onSave,
+  initialData,
+}) => {
+  const isEditMode = !!initialData;
+
   // --- 图片状态 ---
-  const [coverImage, setCoverImage] = useState<LocalImageFile | null>(null);
-  const [detailImages, setDetailImages] = useState<LocalImageFile[]>([]);
+  const [coverImage, setCoverImage] = useState<LocalImageFile | null>(() => {
+    if (initialData?.coverImage) {
+      return {
+        preview: initialData.coverImage.url,
+        uploadedUrl: initialData.coverImage.url,
+        width: initialData.coverImage.width,
+        height: initialData.coverImage.height,
+      };
+    }
+    return null;
+  });
+
+  const [detailImages, setDetailImages] = useState<LocalImageFile[]>(() => {
+    return (
+      initialData?.detailImages?.map((img) => ({
+        preview: img.url,
+        uploadedUrl: img.url,
+        width: img.width,
+        height: img.height,
+      })) || []
+    );
+  });
 
   // --- 表单状态 ---
-  const [title, setTitle] = useState("");
-  const [variety, setVariety] = useState(CATEGORIES[1].id);
-  const [ownerName, setOwnerName] = useState("管理员");
-  const [description, setDescription] = useState("");
+  const [title, setTitle] = useState(initialData?.title || "");
+  const [variety, setVariety] = useState(
+    initialData?.variety || CATEGORIES[1].id,
+  );
+  const [ownerName, setOwnerName] = useState(
+    initialData?.ownerName || "管理员",
+  );
+  const [description, setDescription] = useState(
+    initialData?.description || "",
+  );
+
+  // --- 辅助函数：从 tags 中解析具体值 ---
+  const getTagValue = (type: string) => {
+    return initialData?.tags.find((t) => t.type === type)?.value;
+  };
+
+  const initialSize = getTagValue("size") as
+    | { length: string; width: string; height: string }
+    | undefined;
 
   // --- 尺寸三围 ---
-  const [sizeEdge, setSizeEdge] = useState("");
-  const [sizeBelly, setSizeBelly] = useState("");
-  const [sizeHeight, setSizeHeight] = useState("");
+  const [sizeEdge, setSizeEdge] = useState(initialSize?.length || "");
+  const [sizeBelly, setSizeBelly] = useState(initialSize?.width || "");
+  const [sizeHeight, setSizeHeight] = useState(initialSize?.height || "");
 
   // --- 其他属性 ---
-  const [weight, setWeight] = useState("");
-  const [playTimeValue, setPlayTimeValue] = useState("");
-  const [playTimeUnit, setPlayTimeUnit] = useState("年");
-  const [color, setColor] = useState("");
+  const [weight, setWeight] = useState(
+    (getTagValue("weight") as string)?.replace("g", "") || "",
+  );
+
+  const rawPlayTime = getTagValue("play_time") as string;
+  const [playTimeValue, setPlayTimeValue] = useState(
+    rawPlayTime?.replace(/[^\d]/g, "") || "",
+  );
+  const [playTimeUnit, setPlayTimeUnit] = useState(
+    rawPlayTime?.includes("个月") ? "个月" : "年",
+  );
+
+  const [color, setColor] = useState((getTagValue("color") as string) || "");
 
   // --- 提交状态 ---
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -236,39 +286,57 @@ const UploadPage: React.FC<UploadPageProps> = ({ onCancel, onSave }) => {
   const handleSubmit = async () => {
     // 1. 基础校验
     if (!coverImage || !title) {
-      alert("请至少上传封面图并填写标题。");
+      toast.error("请至少上传封面图并填写标题。");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // 2. 上传封面图
-      setSubmitProgress("正在上传封面图...");
-      const uploadedCover = await uploadSingleImage(
-        coverImage,
-        "walnuts/covers",
-        (progress) => {
-          setSubmitProgress(`正在上传封面图... ${progress}%`);
-        },
-      );
-
-      // 3. 上传细节图（如果有）
-      const uploadedDetails: ImageAsset[] = [];
-      for (let i = 0; i < detailImages.length; i++) {
-        setSubmitProgress(
-          `正在上传细节图 (${i + 1}/${detailImages.length})...`,
-        );
-        const uploaded = await uploadSingleImage(
-          detailImages[i],
-          "walnuts/details",
+      // 2. 上传封面图 (仅当有新文件时)
+      let uploadedCover: ImageAsset;
+      if (coverImage.file) {
+        setSubmitProgress("正在上传封面图...");
+        uploadedCover = await uploadSingleImage(
+          coverImage,
+          "walnuts/covers",
           (progress) => {
-            setSubmitProgress(
-              `正在上传细节图 (${i + 1}/${detailImages.length})... ${progress}%`,
-            );
+            setSubmitProgress(`正在上传封面图... ${progress}%`);
           },
         );
-        uploadedDetails.push(uploaded);
+      } else {
+        uploadedCover = {
+          url: coverImage.uploadedUrl!,
+          width: coverImage.width,
+          height: coverImage.height,
+        };
+      }
+
+      // 3. 上传各细节图
+      const uploadedDetails: ImageAsset[] = [];
+      for (let i = 0; i < detailImages.length; i++) {
+        const img = detailImages[i];
+        if (img.file) {
+          setSubmitProgress(
+            `正在上传新细节图 (${i + 1}/${detailImages.length})...`,
+          );
+          const uploaded = await uploadSingleImage(
+            img,
+            "walnuts/details",
+            (progress) => {
+              setSubmitProgress(
+                `正在上传细节图 (${i + 1}/${detailImages.length})... ${progress}%`,
+              );
+            },
+          );
+          uploadedDetails.push(uploaded);
+        } else {
+          uploadedDetails.push({
+            url: img.uploadedUrl!,
+            width: img.width,
+            height: img.height,
+          });
+        }
       }
 
       // 4. 构建标签数据
@@ -313,8 +381,13 @@ const UploadPage: React.FC<UploadPageProps> = ({ onCancel, onSave }) => {
         tags,
       };
 
-      const response = await fetch("/api/walnuts", {
-        method: "POST",
+      const url = isEditMode
+        ? `/api/walnuts/${initialData!.id}`
+        : "/api/walnuts";
+      const method = isEditMode ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(walnutData),
       });
@@ -327,11 +400,10 @@ const UploadPage: React.FC<UploadPageProps> = ({ onCancel, onSave }) => {
       const result = await response.json();
       console.log("保存成功:", result.data);
 
-      // 6. 调用成功回调，传入服务器返回的完整数据
       onSave(result.data);
     } catch (error) {
       console.error("上传失败:", error);
-      alert(
+      toast.error(
         `上传失败: ${error instanceof Error ? error.message : "请检查网络连接"}`,
       );
     } finally {
@@ -350,7 +422,9 @@ const UploadPage: React.FC<UploadPageProps> = ({ onCancel, onSave }) => {
         {/* Header */}
         <div className="flex justify-between items-center mb-8 pb-4 border-b border-stone-100">
           <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-serif font-bold text-ink">上传珍品</h2>
+            <h2 className="text-2xl font-serif font-bold text-ink">
+              {isEditMode ? `修改藏品 · ${initialData?.title}` : "上传珍品"}
+            </h2>
             {/* 开发模式：快速填充按钮 */}
             {DEV_MODE && (
               <button
@@ -702,7 +776,7 @@ const UploadPage: React.FC<UploadPageProps> = ({ onCancel, onSave }) => {
                   <>
                     <Save className="w-4 h-4" />
                     <span className="tracking-widest font-bold text-sm">
-                      发布入册
+                      {isEditMode ? "保存修改" : "发布入册"}
                     </span>
                   </>
                 )}
