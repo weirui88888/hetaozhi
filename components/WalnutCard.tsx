@@ -1,7 +1,7 @@
 import { CATEGORIES, COLOR_MAP, TAG_LABELS } from "@/constants";
 import { Walnut } from "@/types";
 import { Heart, Hourglass, Layers, Palette, Ruler, Scale } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 
 interface WalnutCardProps {
   data: Walnut;
@@ -9,8 +9,9 @@ interface WalnutCardProps {
   isAdmin?: boolean;
 }
 
-const WalnutCard: React.FC<WalnutCardProps> = ({ data, onClick, isAdmin }) => {
+const WalnutCard: React.FC<WalnutCardProps> = ({ data, onClick }) => {
   const hasMultipleImages = data.detailImages && data.detailImages.length > 0;
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   // 查找品种名称
   const varietyLabel =
@@ -18,17 +19,36 @@ const WalnutCard: React.FC<WalnutCardProps> = ({ data, onClick, isAdmin }) => {
 
   return (
     <div
-      className="group flex flex-col gap-4 mb-8 break-inside-avoid cursor-pointer"
+      className="group flex flex-col gap-4 mb-8 break-inside-avoid cursor-pointer animate-fade-in"
       onClick={() => onClick(data)}
     >
-      {/* Image Container */}
-      <div className="relative w-full overflow-hidden bg-stone-100 shadow-sm transition-all duration-500 group-hover:shadow-2xl group-hover:-translate-y-1">
+      {/* Image Container - 使用 aspect-ratio 预留空间 */}
+      <div
+        className="relative w-full overflow-hidden bg-stone-100 shadow-sm transition-all duration-500 group-hover:shadow-2xl group-hover:-translate-y-1"
+        style={{
+          aspectRatio:
+            data.coverImage.width && data.coverImage.height
+              ? `${data.coverImage.width} / ${data.coverImage.height}`
+              : "4 / 5", // 默认比例
+        }}
+      >
+        {/* 占位符标识 - 图片加载前显示 */}
+        {!imageLoaded && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-stone-300 text-sm font-serif tracking-[0.3em] select-none">
+              核桃·志
+            </span>
+          </div>
+        )}
         <div className="absolute inset-0 bg-stone-900/0 group-hover:bg-stone-900/5 transition-colors duration-500 z-10" />
         <img
           src={data.coverImage.url}
           alt={data.title}
-          className="w-full h-auto object-cover block transition-transform duration-700 group-hover:scale-105"
+          className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
+            imageLoaded ? "opacity-100" : "opacity-0"
+          }`}
           loading="lazy"
+          onLoad={() => setImageLoaded(true)}
         />
 
         {/* Variety Badge - Subtle */}

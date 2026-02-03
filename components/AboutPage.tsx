@@ -52,7 +52,7 @@ const AboutPage: React.FC = () => {
                 Established
               </span>
               <span className="font-serif text-ink font-medium">
-                二零二四 · 初春
+                二零二六 · 初春
               </span>
             </div>
           </div>

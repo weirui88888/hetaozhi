@@ -22,7 +22,7 @@ import WalnutDetailModal from "@/components/WalnutDetailModal";
 import { CATEGORIES } from "@/constants";
 import { Walnut } from "@/types";
 import { Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export default function Home() {
@@ -66,7 +66,18 @@ export default function Home() {
   // --- 数据状态 ---
   const [walnuts, setWalnuts] = useState<Walnut[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+
+  // 分页配置
+  const PAGE_SIZE = 12;
+
+  // 无限滚动触发器
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // 防止重复请求的标志
+  const isLoadingRef = useRef(false);
 
   // =============================================================================
   // 数据加载
@@ -74,31 +85,97 @@ export default function Home() {
 
   /**
    * 从 API 加载核桃数据
+   * @param isLoadMore 是否为加载更多（追加到现有数据）
    */
-  const fetchWalnuts = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const response = await fetch("/api/walnuts");
-      if (!response.ok) {
-        throw new Error("加载数据失败");
+  const fetchWalnuts = useCallback(
+    async (isLoadMore = false) => {
+      // 防止重复请求
+      if (isLoadMore && isLoadingRef.current) {
+        return;
       }
 
-      const result = await response.json();
-      setWalnuts(result.data || []);
-    } catch (err) {
-      console.error("加载数据失败:", err);
-      setError(err instanceof Error ? err.message : "加载失败");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      try {
+        if (isLoadMore) {
+          isLoadingRef.current = true;
+          setIsLoadingMore(true);
+        } else {
+          setIsLoading(true);
+          setWalnuts([]);
+          setHasMore(true);
+        }
+        setError(null);
+
+        const skip = isLoadMore ? walnuts.length : 0;
+        const response = await fetch(
+          `/api/walnuts?limit=${PAGE_SIZE}&skip=${skip}`,
+        );
+        if (!response.ok) {
+          throw new Error("加载数据失败");
+        }
+
+        const result = await response.json();
+        const newData = result.data || [];
+
+        if (isLoadMore) {
+          setWalnuts((prev) => [...prev, ...newData]);
+        } else {
+          setWalnuts(newData);
+        }
+
+        // 判断是否还有更多数据
+        if (newData.length < PAGE_SIZE) {
+          setHasMore(false);
+        }
+      } catch (err) {
+        console.error("加载数据失败:", err);
+        setError(err instanceof Error ? err.message : "加载失败");
+      } finally {
+        setIsLoading(false);
+        setIsLoadingMore(false);
+        isLoadingRef.current = false;
+      }
+    },
+    [walnuts.length, PAGE_SIZE],
+  );
 
   // 初始加载
   useEffect(() => {
-    fetchWalnuts();
-  }, [fetchWalnuts]);
+    fetchWalnuts(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ==============================================================================
+  // 无限滚动 IntersectionObserver
+  // =============================================================================
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        // 使用 ref 判断是否正在加载，避免重复请求
+        if (
+          first.isIntersecting &&
+          hasMore &&
+          !isLoadingRef.current &&
+          !isLoading
+        ) {
+          fetchWalnuts(true);
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [hasMore, isLoading, fetchWalnuts]);
 
   // =============================================================================
   // 筛选逻辑
@@ -108,6 +185,15 @@ export default function Home() {
     if (selectedCategory === "all") return walnuts;
     return walnuts.filter((w) => w.variety === selectedCategory);
   }, [selectedCategory, walnuts]);
+
+  // 手动分列 - 避免 CSS columns 在添加新元素时重排
+  const columnedWalnuts = useMemo(() => {
+    const cols: Walnut[][] = [[], [], []];
+    filteredWalnuts.forEach((walnut, index) => {
+      cols[index % 3].push(walnut);
+    });
+    return cols;
+  }, [filteredWalnuts]);
 
   // =============================================================================
   // 导航处理
@@ -214,7 +300,7 @@ export default function Home() {
                 <div className="flex flex-col items-center justify-center py-24 text-stone-400">
                   <p className="text-red-400 mb-4">{error}</p>
                   <button
-                    onClick={fetchWalnuts}
+                    onClick={() => fetchWalnuts(false)}
                     className="px-4 py-2 bg-stone-100 hover:bg-stone-200 rounded text-sm"
                   >
                     重试
@@ -231,17 +317,60 @@ export default function Home() {
                 </div>
               )}
 
-              {/* 瀑布流列表 */}
+              {/* 瀑布流列表 - 手动分列避免重排 */}
               {!isLoading && !error && filteredWalnuts.length > 0 && (
-                <div className="columns-1 md:columns-2 lg:columns-3 gap-8">
-                  {filteredWalnuts.map((walnut) => (
-                    <WalnutCard
-                      key={walnut.id}
-                      data={walnut}
-                      onClick={setSelectedWalnut}
-                      isAdmin={isAdmin}
-                    />
-                  ))}
+                <>
+                  {/* 移动端: 1列 */}
+                  <div className="flex flex-col md:hidden">
+                    {filteredWalnuts.map((walnut) => (
+                      <WalnutCard
+                        key={walnut.id}
+                        data={walnut}
+                        onClick={setSelectedWalnut}
+                        isAdmin={isAdmin}
+                      />
+                    ))}
+                  </div>
+                  {/* 中屏及以上: 2-3列 */}
+                  <div className="hidden md:flex gap-8">
+                    {columnedWalnuts.map((column, colIndex) => (
+                      <div
+                        key={colIndex}
+                        className={`flex-1 flex flex-col ${colIndex === 2 ? "hidden lg:flex" : ""}`}
+                      >
+                        {column.map((walnut) => (
+                          <WalnutCard
+                            key={walnut.id}
+                            data={walnut}
+                            onClick={setSelectedWalnut}
+                            isAdmin={isAdmin}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* 加载更多触发器 */}
+              {!isLoading && filteredWalnuts.length > 0 && (
+                <div ref={loadMoreRef} className="flex justify-center py-12">
+                  {isLoadingMore ? (
+                    <div className="flex items-center gap-2 text-stone-400">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span className="text-sm tracking-widest">
+                        加载更多...
+                      </span>
+                    </div>
+                  ) : hasMore ? (
+                    <span className="text-xs text-stone-300 tracking-widest">
+                      向下滚动加载更多
+                    </span>
+                  ) : (
+                    <span className="text-xs text-stone-300 tracking-widest">
+                      — 已加载全部 —
+                    </span>
+                  )}
                 </div>
               )}
 

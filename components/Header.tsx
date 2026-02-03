@@ -48,18 +48,20 @@ const Header: React.FC<HeaderProps> = ({
           {currentView === "about" ? "返回雅集" : "关于"}
         </button>
 
-        {/* Upload Button - Minimalist Icon */}
-        <button
-          onClick={onNavigateUpload}
-          className={`
-            hover:text-walnut transition-colors p-1
-            ${currentView === "upload" ? "text-walnut" : "text-stone-400"}
-          `}
-          title="上传珍品"
-          aria-label="上传珍品"
-        >
-          <Upload className="w-5 h-5" />
-        </button>
+        {/* Upload Button - 仅管理员可见 */}
+        {isAdmin && (
+          <button
+            onClick={onNavigateUpload}
+            className={`
+              hover:text-walnut transition-colors p-1
+              ${currentView === "upload" ? "text-walnut" : "text-stone-400"}
+            `}
+            title="上传珍品"
+            aria-label="上传珍品"
+          >
+            <Upload className="w-5 h-5" />
+          </button>
+        )}
       </div>
     </header>
   );
