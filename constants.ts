@@ -2,6 +2,7 @@ import { Category, Walnut } from "./types";
 
 export const CATEGORIES: Category[] = [
   { id: "all", name: "全部雅集", description: "All Collections" },
+  { id: "south-west", name: "南疆", description: "South West" },
   { id: "lion-head", name: "狮子头", description: "Lion Head" },
   { id: "officer-hat", name: "官帽", description: "Officer's Hat" },
   { id: "tiger-head", name: "虎头", description: "Tiger Head" },

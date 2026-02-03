@@ -54,7 +54,7 @@ const DEV_MODE = true; // 生产环境部署前改为 false
  */
 const DEV_DEFAULTS = {
   title: "测试核桃 · 自动填充",
-  variety: "lion_head", // 狮子头
+  variety: "south-west", // 南疆
   ownerName: "开发测试员",
   description: "这是开发环境自动填充的测试数据，用于快速验证上传功能。",
   sizeEdge: "42",
@@ -168,6 +168,11 @@ const UploadPage: React.FC<UploadPageProps> = ({
   );
 
   const [color, setColor] = useState((getTagValue("color") as string) || "");
+
+  // --- 共赏数（仅编辑模式可用）---
+  const [likes, setLikes] = useState(
+    initialData?.likes !== undefined ? String(initialData.likes) : "",
+  );
 
   // --- 提交状态 ---
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -379,6 +384,8 @@ const UploadPage: React.FC<UploadPageProps> = ({
         coverImage: uploadedCover,
         detailImages: uploadedDetails.length > 0 ? uploadedDetails : undefined,
         tags,
+        // 编辑模式下包含 likes
+        ...(isEditMode && likes !== "" && { likes: parseInt(likes) || 0 }),
       };
 
       const url = isEditMode
@@ -730,6 +737,26 @@ const UploadPage: React.FC<UploadPageProps> = ({
                 ))}
               </div>
             </div>
+
+            {/* 共赏数（仅编辑模式显示）*/}
+            {isEditMode && (
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-stone-500 mb-1">
+                  <span className="text-sm">❤️</span>
+                  <label className="text-xs font-bold uppercase tracking-wider">
+                    共赏数
+                  </label>
+                </div>
+                <input
+                  type="number"
+                  value={likes}
+                  onChange={(e) => setLikes(e.target.value)}
+                  min={0}
+                  className="w-full bg-stone-50 border border-stone-200 p-2 focus:border-walnut focus:outline-none rounded-sm"
+                  disabled={isSubmitting}
+                />
+              </div>
+            )}
 
             <hr className="border-stone-100" />
 

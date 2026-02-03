@@ -154,6 +154,30 @@ export default function Home() {
     setSelectedWalnut(null);
   };
 
+  /**
+   * 删除核桃
+   */
+  const handleDeleteWalnut = async () => {
+    if (!selectedWalnut) return;
+
+    try {
+      const response = await fetch(`/api/walnuts/${selectedWalnut.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("删除失败");
+      }
+
+      setWalnuts((prev) => prev.filter((w) => w.id !== selectedWalnut.id));
+      toast.success("删除成功");
+      setSelectedWalnut(null);
+    } catch (error) {
+      toast.error("删除失败");
+      console.error(error);
+    }
+  };
+
   // =============================================================================
   // 渲染
   // =============================================================================
@@ -255,6 +279,7 @@ export default function Home() {
           isAdmin={isAdmin}
           onClose={() => setSelectedWalnut(null)}
           onEdit={handleEditWalnut}
+          onDelete={handleDeleteWalnut}
         />
       )}
     </div>

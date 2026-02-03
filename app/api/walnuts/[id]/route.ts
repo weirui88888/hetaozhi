@@ -1,9 +1,10 @@
 /**
  * =============================================================================
- * 核桃 API 路由 - 详情 & 删除 (Walnuts API - Detail & Delete)
+ * 核桃 API 路由 - 详情 & 操作 (Walnuts API - Detail & Operations)
  * =============================================================================
  *
  * GET    /api/walnuts/[id]    获取单个核桃详情
+ * PUT    /api/walnuts/[id]    更新核桃完整数据
  * DELETE /api/walnuts/[id]    删除核桃
  * PATCH  /api/walnuts/[id]    更新点赞数
  *
@@ -57,6 +58,41 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     console.error("[API] 删除核桃失败:", error);
     return NextResponse.json({ error: "删除失败" }, { status: 500 });
+  }
+}
+
+// =============================================================================
+// PUT - 更新核桃完整数据
+// =============================================================================
+
+export async function PUT(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+
+    // 调用服务更新数据
+    const updatedWalnut = await walnutService.update(id, {
+      title: body.title,
+      variety: body.variety,
+      ownerName: body.ownerName,
+      description: body.description,
+      coverImage: body.coverImage,
+      detailImages: body.detailImages,
+      tags: body.tags,
+      likes: body.likes,
+    });
+
+    if (!updatedWalnut) {
+      return NextResponse.json(
+        { error: "核桃不存在或更新失败" },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({ data: updatedWalnut, message: "更新成功" });
+  } catch (error) {
+    console.error("[API] 更新核桃失败:", error);
+    return NextResponse.json({ error: "更新失败" }, { status: 500 });
   }
 }
 

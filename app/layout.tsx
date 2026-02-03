@@ -83,7 +83,7 @@ export default function RootLayout({
         className={`${notoSerifSC.variable} antialiased min-h-screen bg-paper font-serif text-ink`}
       >
         {children}
-        <Toaster richColors position="top-center" />
+        <Toaster position="top-center" />
       </body>
     </html>
   );

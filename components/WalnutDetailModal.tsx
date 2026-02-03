@@ -13,6 +13,7 @@ import {
   Ruler,
   Scale,
   Share2,
+  Trash2,
   X,
 } from "lucide-react";
 import Image from "next/image";
@@ -24,6 +25,7 @@ interface WalnutDetailModalProps {
   onClose: () => void;
   isAdmin?: boolean;
   onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
@@ -31,6 +33,7 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
   onClose,
   isAdmin,
   onEdit,
+  onDelete,
 }) => {
   // Combine cover image and detail images into a single list for the gallery
   const allImages = [walnut.coverImage, ...(walnut.detailImages || [])];
@@ -101,18 +104,34 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
         {/* Modal Content */}
         <div className="relative w-full max-w-6xl h-full sm:h-[90vh] bg-[#fcfbf9] sm:rounded-md shadow-2xl overflow-hidden flex flex-col sm:flex-row animate-in fade-in zoom-in-95 duration-200">
           {/* Close Button & Admin Controls */}
-          <div className="absolute top-4 right-4 z-50 flex gap-2">
-            {isAdmin && onEdit && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit();
-                }}
-                className="p-2 bg-walnut/10 hover:bg-walnut/20 text-walnut rounded-full transition-colors backdrop-blur-md border border-walnut/20"
-                title="编辑详情"
-              >
-                <Palette className="w-6 h-6" />
-              </button>
+          <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
+            {isAdmin && (
+              <>
+                {onDelete && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete();
+                    }}
+                    className="w-8 h-8 flex items-center justify-center bg-red-50 hover:bg-red-100 text-red-500 rounded-full transition-colors backdrop-blur-md border border-red-200"
+                    title="删除"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+                {onEdit && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit();
+                    }}
+                    className="w-8 h-8 flex items-center justify-center bg-walnut/10 hover:bg-walnut/20 text-walnut rounded-full transition-colors backdrop-blur-md border border-walnut/20"
+                    title="编辑详情"
+                  >
+                    <Palette className="w-4 h-4" />
+                  </button>
+                )}
+              </>
             )}
             <button
               onClick={onClose}
@@ -191,9 +210,9 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
                       {tag.type === "size" && typeof tag.value !== "string" ? (
                         <div className="flex gap-2">
                           {tag.value.length && (
-                            <span>长{tag.value.length}</span>
+                            <span>边{tag.value.length}</span>
                           )}
-                          {tag.value.width && <span>宽{tag.value.width}</span>}
+                          {tag.value.width && <span>肚{tag.value.width}</span>}
                           {tag.value.height && (
                             <span>高{tag.value.height}</span>
                           )}
@@ -245,8 +264,11 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
                 <h3 className="text-sm font-bold tracking-widest text-ink uppercase border-b border-stone-100 pb-2">
                   雅集详情
                 </h3>
-                <p className="text-ink-light leading-loose text-sm font-light text-justify">
+                <div className="text-ink-light text-sm font-light text-justify">
                   {walnut.description}
+                </div>
+                <p className="text-ink-light text-sm font-light text-justify">
+                  每一对核桃都承载着时间的记忆。从青皮到红润，从粗糙到玉化，这不仅是把玩的过程，更是修心的旅程。
                 </p>
               </div>
             </div>

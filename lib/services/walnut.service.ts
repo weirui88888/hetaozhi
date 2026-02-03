@@ -162,6 +162,48 @@ export const walnutService = {
   },
 
   /**
+   * 更新核桃数据
+   * @param id 核桃 ID
+   * @param input 要更新的字段
+   * @returns 更新后的核桃对象或 null
+   */
+  async update(
+    id: string,
+    input: Partial<CreateWalnutInput>,
+  ): Promise<Walnut | null> {
+    if (!ObjectId.isValid(id)) {
+      return null;
+    }
+
+    const collection = await getCollection<WalnutDocument>(COLLECTION_NAME);
+
+    // 构建更新对象，只包含有值的字段
+    const updateFields: Record<string, unknown> = {
+      updatedAt: new Date(),
+    };
+
+    if (input.title !== undefined) updateFields.title = input.title;
+    if (input.variety !== undefined) updateFields.variety = input.variety;
+    if (input.ownerName !== undefined) updateFields.ownerName = input.ownerName;
+    if (input.description !== undefined)
+      updateFields.description = input.description;
+    if (input.coverImage !== undefined)
+      updateFields.coverImage = input.coverImage;
+    if (input.detailImages !== undefined)
+      updateFields.detailImages = input.detailImages;
+    if (input.tags !== undefined) updateFields.tags = input.tags;
+    if (input.likes !== undefined) updateFields.likes = input.likes;
+
+    const result = await collection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: updateFields },
+      { returnDocument: "after" },
+    );
+
+    return result ? toWalnut(result) : null;
+  },
+
+  /**
    * 更新核桃点赞数
    * @param id 核桃 ID
    * @param increment 增量（正数点赞，负数取消）

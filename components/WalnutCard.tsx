@@ -1,4 +1,4 @@
-import { COLOR_MAP, TAG_LABELS } from "@/constants";
+import { CATEGORIES, COLOR_MAP, TAG_LABELS } from "@/constants";
 import { Walnut } from "@/types";
 import { Heart, Hourglass, Layers, Palette, Ruler, Scale } from "lucide-react";
 import React from "react";
@@ -12,13 +12,17 @@ interface WalnutCardProps {
 const WalnutCard: React.FC<WalnutCardProps> = ({ data, onClick, isAdmin }) => {
   const hasMultipleImages = data.detailImages && data.detailImages.length > 0;
 
+  // 查找品种名称
+  const varietyLabel =
+    CATEGORIES.find((c) => c.id === data.variety)?.name || "珍品";
+
   return (
     <div
       className="group flex flex-col gap-4 mb-8 break-inside-avoid cursor-pointer"
       onClick={() => onClick(data)}
     >
       {/* Image Container */}
-      <div className="relative w-full overflow-hidden bg-stone-100 rounded-sm shadow-sm transition-all duration-500 group-hover:shadow-2xl group-hover:-translate-y-1">
+      <div className="relative w-full overflow-hidden bg-stone-100 shadow-sm transition-all duration-500 group-hover:shadow-2xl group-hover:-translate-y-1">
         <div className="absolute inset-0 bg-stone-900/0 group-hover:bg-stone-900/5 transition-colors duration-500 z-10" />
         <img
           src={data.coverImage.url}
@@ -30,13 +34,7 @@ const WalnutCard: React.FC<WalnutCardProps> = ({ data, onClick, isAdmin }) => {
         {/* Variety Badge - Subtle */}
         <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <span className="bg-white/90 backdrop-blur-sm px-3 py-1 text-xs text-ink-light tracking-widest border border-stone-200 shadow-sm">
-            {data.variety === "lion-head"
-              ? "狮子头"
-              : data.variety === "officer-hat"
-                ? "官帽"
-                : data.variety === "tiger-head"
-                  ? "虎头"
-                  : "珍品"}
+            {varietyLabel}
           </span>
         </div>
 
