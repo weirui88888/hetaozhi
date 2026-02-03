@@ -31,9 +31,10 @@ export async function GET(request: NextRequest) {
     const variety = searchParams.get("variety") || undefined;
     const limit = parseInt(searchParams.get("limit") || "50");
     const skip = parseInt(searchParams.get("skip") || "0");
+    const sort = (searchParams.get("sort") as "default" | "likes") || "default";
 
     // 查询数据
-    const walnuts = await walnutService.findAll({ variety, limit, skip });
+    const walnuts = await walnutService.findAll({ variety, limit, skip, sort });
     const total = await walnutService.count(variety);
 
     return NextResponse.json({

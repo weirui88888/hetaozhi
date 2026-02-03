@@ -14,7 +14,7 @@
 "use client";
 
 import AboutPage from "@/components/AboutPage";
-import CategoryNav from "@/components/CategoryNav";
+import CategoryNav, { SortOrder } from "@/components/CategoryNav";
 import Header from "@/components/Header";
 import UploadPage from "@/components/UploadPage";
 import WalnutCard from "@/components/WalnutCard";
@@ -69,6 +69,7 @@ export default function Home() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
+  const [sortOrder, setSortOrder] = useState<SortOrder>("default");
 
   // 分页配置
   const PAGE_SIZE = 12;
@@ -107,7 +108,7 @@ export default function Home() {
 
         const skip = isLoadMore ? walnuts.length : 0;
         const response = await fetch(
-          `/api/walnuts?limit=${PAGE_SIZE}&skip=${skip}`,
+          `/api/walnuts?limit=${PAGE_SIZE}&skip=${skip}&sort=${sortOrder}`,
         );
         if (!response.ok) {
           throw new Error("加载数据失败");
@@ -135,8 +136,14 @@ export default function Home() {
         isLoadingRef.current = false;
       }
     },
-    [walnuts.length, PAGE_SIZE],
+    [walnuts.length, PAGE_SIZE, sortOrder],
   );
+
+  // sortOrder 变化时重新加载
+  useEffect(() => {
+    fetchWalnuts(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortOrder]);
 
   // 初始加载
   useEffect(() => {
@@ -284,6 +291,12 @@ export default function Home() {
               categories={CATEGORIES}
               selectedId={selectedCategory}
               onSelect={setSelectedCategory}
+              sortOrder={sortOrder}
+              onSortChange={(newOrder) => {
+                if (newOrder !== sortOrder) {
+                  setSortOrder(newOrder);
+                }
+              }}
             />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 animate-fade-in">

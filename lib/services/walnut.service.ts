@@ -52,6 +52,7 @@ export interface FindWalnutsParams {
   variety?: string; // 按品种筛选
   limit?: number; // 限制数量
   skip?: number; // 跳过数量（分页）
+  sort?: "default" | "likes"; // 排序方式
 }
 
 // =============================================================================
@@ -92,7 +93,7 @@ export const walnutService = {
    * @returns 核桃数组
    */
   async findAll(params: FindWalnutsParams = {}): Promise<Walnut[]> {
-    const { variety, limit = 50, skip = 0 } = params;
+    const { variety, limit = 50, skip = 0, sort = "default" } = params;
 
     const collection = await getCollection<WalnutDocument>(COLLECTION_NAME);
 
@@ -102,10 +103,14 @@ export const walnutService = {
       filter.variety = variety;
     }
 
-    // 执行查询，按创建时间倒序
+    // 根据排序参数选择排序方式
+    const sortOptions: Record<string, 1 | -1> =
+      sort === "likes" ? { likes: -1, createdAt: -1 } : { createdAt: -1 };
+
+    // 执行查询
     const docs = await collection
       .find(filter)
-      .sort({ createdAt: -1 })
+      .sort(sortOptions)
       .skip(skip)
       .limit(limit)
       .toArray();
