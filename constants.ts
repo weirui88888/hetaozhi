@@ -3,12 +3,13 @@ import { Category, Walnut } from "./types";
 export const CATEGORIES: Category[] = [
   { id: "all", name: "全部雅集", description: "All Collections" },
   { id: "south-west", name: "南疆", description: "South West" },
-  { id: "lion-head", name: "狮子头", description: "Lion Head" },
+  { id: "toad-head", name: "蛤蟆头", description: "Toad Head" },
+  { id: "three-edge", name: "三棱", description: "Three Edge" },
+  { id: "millstone", name: "磨盘", description: "Millstone" },
   { id: "officer-hat", name: "官帽", description: "Officer's Hat" },
   { id: "tiger-head", name: "虎头", description: "Tiger Head" },
   { id: "chicken-heart", name: "鸡心", description: "Chicken Heart" },
-  { id: "lantern", name: "灯笼", description: "Lantern" },
-  { id: "white-lion", name: "白狮", description: "White Lion" },
+  { id: "white-lion", name: "白狮子", description: "White Lion" },
 ];
 
 export const TAG_LABELS: Record<string, string> = {

@@ -149,7 +149,6 @@ export default function Home() {
       }
       return [newWalnut, ...prev];
     });
-    toast.success("保存成功！");
     setCurrentView("gallery");
     setSelectedWalnut(null);
   };

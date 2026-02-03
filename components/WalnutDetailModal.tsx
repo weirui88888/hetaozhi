@@ -2,6 +2,7 @@
 
 import { COLOR_MAP, TAG_LABELS } from "@/constants";
 import { Walnut } from "@/types";
+import { toPng } from "html-to-image";
 import {
   ChevronLeft,
   ChevronRight,
@@ -17,7 +18,7 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface WalnutDetailModalProps {
@@ -45,6 +46,8 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
 
   // Share Modal State
   const [showShareModal, setShowShareModal] = useState(false);
+  // 海报容器引用
+  const posterRef = useRef<HTMLDivElement>(null);
   const [showQrCode, setShowQrCode] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -62,12 +65,38 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
     setShowShareModal(true);
   };
 
-  const handleDownload = () => {
+  // 下载海报功能 - 使用 html-to-image 库生成高清图片
+  const handleDownload = async () => {
+    if (!posterRef.current) {
+      toast.error("海报生成失败");
+      return;
+    }
+
     setIsDownloading(true);
-    setTimeout(() => {
+
+    try {
+      // 使用 html-to-image 生成高清 PNG
+      // pixelRatio: 3 可以生成 3 倍像素密度的高清图片
+      const dataUrl = await toPng(posterRef.current, {
+        cacheBust: true,
+        pixelRatio: 3, // 高清输出
+        quality: 1, // 最高质量
+        backgroundColor: "#fcfbf9", // 确保背景色正确
+      });
+
+      // 创建下载链接
+      const link = document.createElement("a");
+      link.download = `核桃雅集-${walnut.title}-${Date.now()}.png`;
+      link.href = dataUrl;
+      link.click();
+
+      toast.success("海报已保存成功");
+    } catch (error) {
+      console.error("海报生成失败:", error);
+      toast.error("海报生成失败，请重试");
+    } finally {
       setIsDownloading(false);
-      toast.success("海报已保存至相册");
-    }, 1500);
+    }
   };
 
   // Lock body scroll when modal is open
@@ -267,7 +296,7 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
                 <div className="text-ink-light text-sm font-light text-justify">
                   {walnut.description}
                 </div>
-                <p className="text-ink-light text-sm font-light text-justify">
+                <p className="text-ink-light text-sm font-light text-justify italic">
                   每一对核桃都承载着时间的记忆。从青皮到红润，从粗糙到玉化，这不仅是把玩的过程，更是修心的旅程。
                 </p>
               </div>
@@ -312,7 +341,10 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
           />
 
           {/* The 3:4 Card Container */}
-          <div className="relative z-120 w-full max-w-sm aspect-3/4 bg-[#fcfbf9] rounded-sm shadow-2xl p-5 flex flex-col items-center justify-between border border-stone-200 overflow-hidden transition-all duration-300">
+          <div
+            ref={posterRef}
+            className="relative z-120 w-full max-w-sm aspect-3/4 bg-[#fcfbf9] rounded-sm shadow-2xl p-5 flex flex-col items-center justify-between border border-stone-200 overflow-hidden transition-all duration-300"
+          >
             {/* Card Header */}
             <div className="w-full flex justify-between items-center opacity-50 mb-2 shrink-0">
               <span className="text-[10px] tracking-[0.2em] uppercase">
@@ -363,7 +395,7 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
                         className="flex items-center gap-1 bg-stone-100 px-2 py-1 rounded-sm border border-stone-100"
                       >
                         {getTagIcon(tag.type)}
-                        <span className="text-[10px] text-stone-600 font-serif">
+                        <span className="text-[10px] text-stone-600 font-serif whitespace-nowrap">
                           {tag.type === "size" && typeof tag.value !== "string"
                             ? tag.value.length &&
                               tag.value.width &&
