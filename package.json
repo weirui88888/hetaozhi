@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "lucide-react": "^0.563.0",
+    "mongodb": "^7.0.0",
     "next": "16.1.6",
     "qiniu-js": "^3.4.3",
     "react": "19.2.3",
@@ -24,5 +25,8 @@
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "volta": {
+    "node": "22.12.0"
   }
 }

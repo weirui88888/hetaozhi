@@ -41,8 +41,11 @@ import React, { useRef, useState } from "react";
  * 开发模式开关
  * - true: 显示「填充测试数据」按钮，方便快速测试上传功能
  * - false: 生产环境，隐藏测试按钮
+ *
+ * 注意：Next.js 客户端不能直接访问 process.env.NODE_ENV，
+ * 这里使用一个简单的常量，手动在生产部署前改为 false
  */
-const DEV_MODE = process.env.NODE_ENV === "development";
+const DEV_MODE = true; // 生产环境部署前改为 false
 
 /**
  * 测试用默认值（仅在开发模式下使用）
@@ -297,9 +300,10 @@ const UploadPage: React.FC<UploadPageProps> = ({ onCancel, onSave }) => {
         tags.push({ type: "color", value: color });
       }
 
-      // 5. 构建最终数据对象
-      const newWalnut: Walnut = {
-        id: Date.now().toString(),
+      // 5. 调用 API 保存到数据库
+      setSubmitProgress("正在保存数据...");
+
+      const walnutData = {
         title,
         variety,
         ownerName,
@@ -307,14 +311,24 @@ const UploadPage: React.FC<UploadPageProps> = ({ onCancel, onSave }) => {
         coverImage: uploadedCover,
         detailImages: uploadedDetails.length > 0 ? uploadedDetails : undefined,
         tags,
-        likes: 0,
       };
 
-      setSubmitProgress("正在保存数据...");
-      console.log("提交到数据库:", newWalnut);
+      const response = await fetch("/api/walnuts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(walnutData),
+      });
 
-      // 6. 调用保存回调
-      onSave(newWalnut);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "保存失败");
+      }
+
+      const result = await response.json();
+      console.log("保存成功:", result.data);
+
+      // 6. 调用成功回调，传入服务器返回的完整数据
+      onSave(result.data);
     } catch (error) {
       console.error("上传失败:", error);
       alert(

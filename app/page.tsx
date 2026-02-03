@@ -1,3 +1,16 @@
+/**
+ * =============================================================================
+ * 首页 (Home Page)
+ * =============================================================================
+ *
+ * 📌 功能：
+ *    - 展示核桃瀑布流列表
+ *    - 支持按品种筛选
+ *    - 从 API 加载数据（支持刷新和新增）
+ *
+ * =============================================================================
+ */
+
 "use client";
 
 import AboutPage from "@/components/AboutPage";
@@ -6,26 +19,68 @@ import Header from "@/components/Header";
 import UploadPage from "@/components/UploadPage";
 import WalnutCard from "@/components/WalnutCard";
 import WalnutDetailModal from "@/components/WalnutDetailModal";
-import { CATEGORIES, MOCK_WALNUTS } from "@/constants";
+import { CATEGORIES } from "@/constants";
 import { Walnut } from "@/types";
-import { Sparkles } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Loader2, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export default function Home() {
+  // --- 视图状态 ---
   const [currentView, setCurrentView] = useState<
     "gallery" | "about" | "upload"
   >("gallery");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedWalnut, setSelectedWalnut] = useState<Walnut | null>(null);
 
-  // In a real app, this would come from an API.
-  // Here we use state initialized with MOCK_WALNUTS so we can append to it.
-  const [walnuts, setWalnuts] = useState<Walnut[]>(MOCK_WALNUTS);
+  // --- 数据状态 ---
+  const [walnuts, setWalnuts] = useState<Walnut[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // =============================================================================
+  // 数据加载
+  // =============================================================================
+
+  /**
+   * 从 API 加载核桃数据
+   */
+  const fetchWalnuts = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch("/api/walnuts");
+      if (!response.ok) {
+        throw new Error("加载数据失败");
+      }
+
+      const result = await response.json();
+      setWalnuts(result.data || []);
+    } catch (err) {
+      console.error("加载数据失败:", err);
+      setError(err instanceof Error ? err.message : "加载失败");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // 初始加载
+  useEffect(() => {
+    fetchWalnuts();
+  }, [fetchWalnuts]);
+
+  // =============================================================================
+  // 筛选逻辑
+  // =============================================================================
 
   const filteredWalnuts = useMemo(() => {
     if (selectedCategory === "all") return walnuts;
     return walnuts.filter((w) => w.variety === selectedCategory);
   }, [selectedCategory, walnuts]);
+
+  // =============================================================================
+  // 导航处理
+  // =============================================================================
 
   const handleNavigateHome = () => {
     setCurrentView("gallery");
@@ -40,12 +95,21 @@ export default function Home() {
     setCurrentView("upload");
   };
 
+  /**
+   * 保存成功后的回调
+   * - 将新数据添加到列表顶部
+   * - 返回首页
+   */
   const handleSaveWalnut = (newWalnut: Walnut) => {
-    // Simulate API save
+    // 将新核桃添加到列表顶部
     setWalnuts((prev) => [newWalnut, ...prev]);
     alert("发布成功！");
     setCurrentView("gallery");
   };
+
+  // =============================================================================
+  // 渲染
+  // =============================================================================
 
   return (
     <div className="min-h-screen bg-paper font-serif text-ink selection:bg-stone-200">
@@ -66,8 +130,29 @@ export default function Home() {
             />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 animate-fade-in">
-              {/* Empty State */}
-              {filteredWalnuts.length === 0 && (
+              {/* 加载状态 */}
+              {isLoading && (
+                <div className="flex flex-col items-center justify-center py-24 text-stone-400">
+                  <Loader2 className="w-8 h-8 mb-4 animate-spin" />
+                  <p className="text-sm tracking-widest">加载中...</p>
+                </div>
+              )}
+
+              {/* 错误状态 */}
+              {error && !isLoading && (
+                <div className="flex flex-col items-center justify-center py-24 text-stone-400">
+                  <p className="text-red-400 mb-4">{error}</p>
+                  <button
+                    onClick={fetchWalnuts}
+                    className="px-4 py-2 bg-stone-100 hover:bg-stone-200 rounded text-sm"
+                  >
+                    重试
+                  </button>
+                </div>
+              )}
+
+              {/* 空状态 */}
+              {!isLoading && !error && filteredWalnuts.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-24 text-stone-400">
                   <Sparkles className="w-12 h-12 mb-4 opacity-20" />
                   <p className="text-lg tracking-widest font-light">暂无藏品</p>
@@ -75,18 +160,20 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Masonry-like Grid */}
-              <div className="columns-1 md:columns-2 lg:columns-3 gap-8">
-                {filteredWalnuts.map((walnut) => (
-                  <WalnutCard
-                    key={walnut.id}
-                    data={walnut}
-                    onClick={setSelectedWalnut}
-                  />
-                ))}
-              </div>
+              {/* 瀑布流列表 */}
+              {!isLoading && !error && filteredWalnuts.length > 0 && (
+                <div className="columns-1 md:columns-2 lg:columns-3 gap-8">
+                  {filteredWalnuts.map((walnut) => (
+                    <WalnutCard
+                      key={walnut.id}
+                      data={walnut}
+                      onClick={setSelectedWalnut}
+                    />
+                  ))}
+                </div>
+              )}
 
-              {/* Footer Decoration */}
+              {/* 页脚装饰 */}
               <div className="mt-24 flex justify-center opacity-30">
                 <div className="w-16 h-16 border border-stone-800 rounded-sm flex items-center justify-center">
                   <span className="writing-vertical-rl text-xs font-bold tracking-widest">
@@ -105,7 +192,7 @@ export default function Home() {
         )}
       </main>
 
-      {/* Detail Modal */}
+      {/* 详情弹窗 */}
       {selectedWalnut && (
         <WalnutDetailModal
           walnut={selectedWalnut}
