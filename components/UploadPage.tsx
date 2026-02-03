@@ -1,6 +1,6 @@
 "use client";
 
-import { CATEGORIES } from "@/constants";
+import { CATEGORIES, WALNUT_COLORS } from "@/constants";
 import { Walnut, WalnutTag } from "@/types";
 import {
   Image as ImageIcon,
@@ -24,8 +24,6 @@ interface ImageFile {
   width: number;
   height: number;
 }
-
-const COLORS = ["白茬", "姜黄", "红润", "枣红", "紫玉", "深褐", "黑红"];
 
 const UploadPage: React.FC<UploadPageProps> = ({ onCancel, onSave }) => {
   // --- Form States ---
@@ -102,44 +100,50 @@ const UploadPage: React.FC<UploadPageProps> = ({ onCancel, onSave }) => {
     // 1. Generate Tags
     const tags: WalnutTag[] = [];
 
-    // Size Tag: Format "48" or "48-42-40"
-    let sizeStr = sizeEdge;
-    if (sizeBelly) sizeStr += `-${sizeBelly}`;
-    if (sizeHeight) sizeStr += `-${sizeHeight}`;
-
-    if (sizeStr) {
-      tags.push({ type: "size", label: "尺寸", value: sizeStr });
+    // Size Tag: Object { length, width, height }
+    if (sizeEdge || sizeBelly || sizeHeight) {
+      tags.push({
+        type: "size",
+        value: {
+          length: sizeEdge || "",
+          width: sizeBelly || "",
+          height: sizeHeight || "",
+        },
+      });
     }
 
     if (weight) {
-      tags.push({ type: "weight", label: "克重", value: `${weight}g` });
+      tags.push({ type: "weight", value: `${weight}g` });
     }
 
     if (playTimeValue) {
       tags.push({
         type: "play_time",
-        label: "盘玩",
         value: `${playTimeValue}${playTimeUnit}`,
       });
     }
 
     if (color) {
-      tags.push({ type: "color", label: "色调", value: color });
+      tags.push({ type: "color", value: color });
     }
 
-    // 2. Construct Object
-    // NOTE: In a real app, you would upload the files to storage here
-    // and get back URL strings. Here we use the base64 preview for demo.
+    // 2. Construct Data Object with Asset Structure
     const newWalnut: Walnut = {
       id: Date.now().toString(),
       title,
       variety,
       ownerName,
       description,
-      imageUrl: coverImage.preview,
-      width: coverImage.width,
-      height: coverImage.height,
-      detailImages: detailImages.map((d) => d.preview),
+      coverImage: {
+        url: coverImage.preview,
+        width: coverImage.width,
+        height: coverImage.height,
+      },
+      detailImages: detailImages.map((d) => ({
+        url: d.preview,
+        width: d.width,
+        height: d.height,
+      })),
       tags,
       likes: 0,
     };
@@ -406,20 +410,20 @@ const UploadPage: React.FC<UploadPageProps> = ({ onCancel, onSave }) => {
                 </label>
               </div>
               <div className="flex flex-wrap gap-2">
-                {COLORS.map((c) => (
+                {WALNUT_COLORS.map((c) => (
                   <button
-                    key={c}
-                    onClick={() => setColor(c)}
+                    key={c.id}
+                    onClick={() => setColor(c.id)}
                     className={`
                       px-3 py-1 text-xs rounded-full border transition-all
                       ${
-                        color === c
+                        color === c.id
                           ? "bg-ink text-white border-ink"
                           : "bg-white text-stone-500 border-stone-200 hover:border-stone-400"
                       }
                     `}
                   >
-                    {c}
+                    {c.name}
                   </button>
                 ))}
               </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { COLOR_MAP, TAG_LABELS } from "@/constants";
 import { Walnut } from "@/types";
 import {
   ChevronLeft,
@@ -26,8 +27,8 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
   walnut,
   onClose,
 }) => {
-  // Combine cover image and detail images
-  const allImages = [walnut.imageUrl, ...(walnut.detailImages || [])];
+  // Combine cover image and detail images into a single list for the gallery
+  const allImages = [walnut.coverImage, ...(walnut.detailImages || [])];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Like State (Simulated)
@@ -81,6 +82,8 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
     );
   };
 
+  const currentImage = allImages[currentImageIndex];
+
   return (
     <>
       <div className="fixed inset-0 z-100 flex items-center justify-center p-0 sm:p-4">
@@ -104,11 +107,12 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
           <div className="w-full sm:w-2/3 h-[50vh] sm:h-full bg-stone-100 relative group select-none">
             {/* Main Image */}
             <Image
-              src={allImages[currentImageIndex]}
+              src={currentImage.url}
               alt={`${walnut.title} - view ${currentImageIndex + 1}`}
               fill
               className="object-contain mix-blend-multiply"
               sizes="(max-width: 768px) 100vw, 66vw"
+              priority
             />
 
             {/* Navigation Arrows */}
@@ -162,10 +166,24 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
                   >
                     <div className="flex items-center gap-2 mb-1 text-stone-400">
                       {getTagIcon(tag.type)}
-                      <span className="text-xs">{tag.label}</span>
+                      <span className="text-xs">{TAG_LABELS[tag.type]}</span>
                     </div>
                     <span className="text-ink font-serif font-medium">
-                      {tag.value}
+                      {tag.type === "size" && typeof tag.value !== "string" ? (
+                        <div className="flex gap-2">
+                          {tag.value.length && (
+                            <span>长{tag.value.length}</span>
+                          )}
+                          {tag.value.width && <span>宽{tag.value.width}</span>}
+                          {tag.value.height && (
+                            <span>高{tag.value.height}</span>
+                          )}
+                        </div>
+                      ) : tag.type === "color" ? (
+                        COLOR_MAP[tag.value as string] || tag.value
+                      ) : (
+                        (tag.value as string)
+                      )}
                     </span>
                   </div>
                 ))}
@@ -211,12 +229,6 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
                 <p className="text-ink-light leading-loose text-sm font-light text-justify">
                   {walnut.description}
                 </p>
-                <p className="text-ink-light leading-loose text-sm font-light text-justify mt-4">
-                  每一对核桃都承载着时间的记忆。从青皮到红润，从粗糙到玉化，这不仅是把玩的过程，更是修心的旅程。
-                  {walnut.detailImages && walnut.detailImages.length > 0
-                    ? "请查看左侧（或上方）更多细节图，欣赏其纹路之美。"
-                    : ""}
-                </p>
               </div>
             </div>
 
@@ -234,7 +246,7 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
                       `}
                     >
                       <Image
-                        src={img}
+                        src={img.url}
                         fill
                         className="object-cover"
                         alt="thumbnail"
@@ -275,7 +287,7 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
             {/* Card Image Area */}
             <div className="w-full h-[42%] bg-stone-100 mb-3 p-2 shadow-inner rounded-sm shrink-0 relative">
               <Image
-                src={walnut.imageUrl}
+                src={walnut.coverImage.url}
                 fill
                 className="object-cover mix-blend-multiply"
                 alt="Poster"
@@ -311,7 +323,15 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
                       >
                         {getTagIcon(tag.type)}
                         <span className="text-[10px] text-stone-600 font-serif">
-                          {tag.value}
+                          {tag.type === "size" && typeof tag.value !== "string"
+                            ? tag.value.length &&
+                              tag.value.width &&
+                              tag.value.height
+                              ? `${tag.value.length},${tag.value.width},${tag.value.height}`
+                              : tag.value.length
+                            : tag.type === "color"
+                              ? COLOR_MAP[tag.value as string] || tag.value
+                              : (tag.value as string)}
                         </span>
                       </div>
                     ))}
@@ -321,7 +341,7 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
                 {/* QR Code Placeholder */}
                 {showQrCode && (
                   <div className="shrink-0 w-20 h-20 bg-white border border-stone-200 p-1 rounded-sm shadow-sm flex items-center justify-center">
-                    <div className="w-full h-full bg-stone-100 flex items-center justify-center text-[8px] text-stone-400">
+                    <div className="shrink-0 w-full h-full bg-stone-100 flex items-center justify-center text-[8px] text-stone-400">
                       <QrCode className="w-8 h-8 opacity-20" />
                     </div>
                   </div>
@@ -331,9 +351,6 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
               {/* Description */}
               <div className="mt-4 text-[11px] text-stone-500 leading-relaxed font-light line-clamp-3 w-full text-justify">
                 {walnut.description}
-                <span className="opacity-80 ml-1">
-                  每一对核桃都承载着时间的记忆。从青皮到红润，从粗糙到玉化，这不仅是把玩的过程，更是修心的旅程。
-                </span>
               </div>
             </div>
 

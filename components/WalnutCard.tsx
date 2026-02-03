@@ -1,3 +1,4 @@
+import { COLOR_MAP, TAG_LABELS } from "@/constants";
 import { Walnut } from "@/types";
 import { Heart, Hourglass, Layers, Palette, Ruler, Scale } from "lucide-react";
 import React from "react";
@@ -19,7 +20,7 @@ const WalnutCard: React.FC<WalnutCardProps> = ({ data, onClick }) => {
       <div className="relative w-full overflow-hidden bg-stone-100 rounded-sm shadow-sm transition-all duration-500 group-hover:shadow-2xl group-hover:-translate-y-1">
         <div className="absolute inset-0 bg-stone-900/0 group-hover:bg-stone-900/5 transition-colors duration-500 z-10" />
         <img
-          src={data.imageUrl}
+          src={data.coverImage.url}
           alt={data.title}
           className="w-full h-auto object-cover block transition-transform duration-700 group-hover:scale-105"
           loading="lazy"
@@ -82,8 +83,14 @@ const WalnutCard: React.FC<WalnutCardProps> = ({ data, onClick }) => {
             <React.Fragment key={index}>
               <div className="flex items-center gap-1.5 group/tag">
                 {getTagIcon(tag.type)}
-                <span className="text-stone-400">{tag.label}</span>
-                <span className="text-ink">{tag.value}</span>
+                <span className="text-stone-400">{TAG_LABELS[tag.type]}</span>
+                <span className="text-ink">
+                  {tag.type === "size" && typeof tag.value !== "string"
+                    ? tag.value.length
+                    : tag.type === "color"
+                      ? COLOR_MAP[tag.value as string] || tag.value
+                      : (tag.value as string)}
+                </span>
               </div>
               {/* Vertical Divider, don't show after last item */}
               {index < data.tags.length - 1 && (

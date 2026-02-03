@@ -1,21 +1,29 @@
-export interface WalnutTag {
-  label: string;
-  value: string;
-  type: 'size' | 'play_time' | 'weight' | 'color';
+export interface ImageAsset {
+  url: string;
+  width: number;
+  height: number;
 }
+
+export interface SizeValue {
+  length: string; // 边
+  width: string; // 肚
+  height: string; // 高
+}
+
+export type WalnutTag =
+  | { type: "size"; value: SizeValue }
+  | { type: "play_time" | "weight" | "color"; value: string };
 
 export interface Walnut {
   id: string;
-  imageUrl: string; // The main cover image
-  width?: number; // Image natural width (for masonry layout)
-  height?: number; // Image natural height (for masonry layout)
-  detailImages?: string[]; // Additional detail shots
-  variety: string; // The category key
+  coverImage: ImageAsset;
+  detailImages?: ImageAsset[];
+  variety: string;
   title: string;
   ownerName: string;
   description: string;
   tags: WalnutTag[];
-  likes: number; // Number of likes/appreciations
+  likes: number;
 }
 
 export interface Category {
