@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
+import QRCode from "qrcode";
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -49,7 +50,28 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
   // 海报容器引用
   const posterRef = useRef<HTMLDivElement>(null);
   const [showQrCode, setShowQrCode] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+
+  // 生成二维码
+  useEffect(() => {
+    if (showQrCode && !qrCodeUrl) {
+      const shareUrl = `${window.location.origin}/?id=${walnut.id}`;
+      QRCode.toDataURL(shareUrl, {
+        width: 200,
+        margin: 1,
+        color: {
+          dark: "#1c1917", // ink color
+          light: "#ffffff",
+        },
+      })
+        .then((url) => setQrCodeUrl(url))
+        .catch((err) => {
+          console.error("生成二维码失败:", err);
+          toast.error("生成二维码失败");
+        });
+    }
+  }, [showQrCode, qrCodeUrl, walnut.id]);
 
   const handleLike = () => {
     if (isLiked) {
@@ -414,9 +436,17 @@ const WalnutDetailModal: React.FC<WalnutDetailModalProps> = ({
                 {/* QR Code Placeholder */}
                 {showQrCode && (
                   <div className="shrink-0 w-20 h-20 bg-white border border-stone-200 p-1 rounded-sm shadow-sm flex items-center justify-center">
-                    <div className="shrink-0 w-full h-full bg-stone-100 flex items-center justify-center text-[8px] text-stone-400">
-                      <QrCode className="w-8 h-8 opacity-20" />
-                    </div>
+                    {qrCodeUrl ? (
+                      <img
+                        src={qrCodeUrl}
+                        alt="分享二维码"
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="shrink-0 w-full h-full bg-stone-100 flex items-center justify-center">
+                        <QrCode className="w-6 h-6 text-stone-300 animate-pulse" />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

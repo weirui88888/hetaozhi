@@ -22,6 +22,7 @@ import WalnutDetailModal from "@/components/WalnutDetailModal";
 import { CATEGORIES } from "@/constants";
 import { Walnut } from "@/types";
 import { Loader2, Sparkles } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -150,6 +151,37 @@ export default function Home() {
     fetchWalnuts(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // =============================================================================
+  // URL 查询参数处理 - 直接打开核桃详情
+  // =============================================================================
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const walnutId = searchParams.get("id");
+    if (!walnutId) return;
+
+    // 调用 API 获取核桃详情
+    const fetchWalnutById = async () => {
+      try {
+        const response = await fetch(`/api/walnuts/${walnutId}`);
+        if (!response.ok) {
+          toast.error("未找到该核桃");
+          return;
+        }
+        const result = await response.json();
+        if (result.data) {
+          setSelectedWalnut(result.data);
+        }
+      } catch (err) {
+        console.error("获取核桃详情失败:", err);
+        toast.error("获取核桃详情失败");
+      }
+    };
+
+    fetchWalnutById();
+  }, [searchParams]);
 
   // ==============================================================================
   // 无限滚动 IntersectionObserver
